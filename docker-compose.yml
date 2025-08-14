@@ -1,0 +1,32 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: eshop_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: eshop_app
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017}
+      - MONGO_DB=${MONGO_DB:-eshop}
+      - DEFAULT_COLLECTION=${DEFAULT_COLLECTION:-customers}
+    ports:
+      - "8501:8501"
+    # para rodar scripts: docker compose run --rm app python seed_data.py --n 1000000 --batch 50000
+    volumes:
+      - .:/app
+
+volumes:
+  mongo_data:
